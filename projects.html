@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects | Ricardo Teixeira</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="projects.css">
+</head>
+
+<body>
+
+<header>
+    <div class="container">
+        <h1>Projects</h1>
+        <nav>
+            <a href="index.html">Home</a>
+        </nav>
+    </div>
+</header>
+
+<section class="container">
+    <h2>Featured Work</h2>
+
+    <div class="projects-grid">
+
+        <!-- PROJECT CARD -->
+        <div class="project-card"
+            data-title="RoadKings"
+            data-video="https://www.youtube.com/embed/VIDEO_ID"
+            data-description="AAA cross-platform project developed for PS5, Xbox Series and PC."
+            data-role="Implemented gameplay systems, UI logic, editor tools and performance optimizations."
+            data-skills="C++, Unreal Engine 5, Gameplay Systems, UI Programming, Optimization">
+
+            <h3>RoadKings</h3>
+            <p>Console & PC Gameplay Programming</p>
+        </div>
+
+        <!-- PROJECT CARD -->
+        <div class="project-card"
+            data-title="Interactive Mirror"
+            data-video="https://www.youtube.com/embed/VIDEO_ID"
+            data-description="Interactive Kinect-based installation that tracks body movement and applies dynamic outfits."
+            data-role="Lead programmer. Implemented body tracking integration and real-time character systems."
+            data-skills="C#, Unity, Azure Kinect, Real-time Systems">
+
+            <h3>Interactive Mirror</h3>
+            <p>Lead Programmer</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- MODAL -->
+<div id="projectModal" class="modal">
+    <div class="modal-content">
+
+        <span class="close">&times;</span>
+
+        <h2 id="modalTitle"></h2>
+
+        <!-- TRAILER -->
+        <div class="video-container">
+            <iframe id="modalVideo" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <!-- DESCRIPTION -->
+        <h3>Description</h3>
+        <p id="modalDescription"></p>
+
+        <!-- WHAT I DID -->
+        <h3>What I Did</h3>
+        <p id="modalRole"></p>
+
+        <!-- SKILLS -->
+        <h3>Skills Used / Learned</h3>
+        <p id="modalSkills"></p>
+
+    </div>
+</div>
+
+<script src="projects.js"></script>
+</body>
+</html>
