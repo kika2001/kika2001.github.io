@@ -371,4 +371,140 @@ header.show {
     object-fit: cover;
 }
 
+.download-btn {
+    position: relative;
+    display: inline-block;
+    padding: 14px 28px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: 0.3s;
+}
+
+.download-btn {
+    position: relative;
+    display: inline-block;
+    padding: 14px 28px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: 0.3s;
+    border: 2px solid rgba(255,255,255,0.1);
+}
+
+/* Hover text */
+.download-btn:hover {
+    color: var(--accent);
+}
+
+/* Base span setup */
+.download-btn span {
+    position: absolute;
+    display: block;
+    background: var(--accent);
+}
+
+/* TOP */
+.download-btn span:nth-child(1) {
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 2px;
+}
+
+/* RIGHT */
+.download-btn span:nth-child(2) {
+    top: -100%;
+    right: 0;
+    width: 2px;
+    height: 100%;
+}
+
+/* BOTTOM */
+.download-btn span:nth-child(3) {
+    bottom: 0;
+    right: -100%;
+    width: 100%;
+    height: 2px;
+}
+
+/* LEFT */
+.download-btn span:nth-child(4) {
+    bottom: -100%;
+    left: 0;
+    width: 2px;
+    height: 100%;
+}
+
+.download-btn:hover span:nth-child(1) {
+    animation: moveTop 0.5s linear forwards;
+}
+
+.download-btn:hover span:nth-child(2) {
+    animation: moveRight 0.5s linear forwards;
+    animation-delay: 0.15s;
+}
+
+.download-btn:hover span:nth-child(3) {
+    animation: moveBottom 0.5s linear forwards;
+    animation-delay: 0.3s;
+}
+
+.download-btn:hover span:nth-child(4) {
+    animation: moveLeft 0.5s linear forwards;
+    animation-delay: 0.45s;
+}
+
+/* Animations */
+@keyframes moveTop {
+    from { left: -100%; }
+    to { left: 100%; }
+}
+
+@keyframes moveRight {
+    from { top: -100%; }
+    to { top: 100%; }
+}
+
+@keyframes moveBottom {
+    from { right: -100%; }
+    to { right: 100%; }
+}
+
+@keyframes moveLeft {
+    from { bottom: -100%; }
+    to { bottom: 100%; }
+}
+
 /*------------ABOUT ME------------*/
+
+/*------------CONTACT------------*/
+.contact-intro {
+    color: var(--muted);
+    margin-bottom: 25px;
+}
+
+.contact-links {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.contact-links a {
+    padding: 12px 20px;
+    background: var(--panel);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+    transition: 0.3s;
+}
+
+.contact-links a:hover {
+    background: var(--accent);
+    color: #fff;
+}
+/*------------CONTACT------------*/

@@ -1,5 +1,27 @@
 {
-    "projects": [
+    "projects": 
+    [
+      {
+        "title": "RoadKings",
+        "subtitle": "Console & PC Gameplay Programming",
+        "video": "https://www.youtube.com/embed/3clSG2irbUE",
+        "cover": "images/roadkings.jpg",
+        "description": "AAA cross-platform project developed for PS5, Xbox Series and PC.",
+        "role": "Implemented gameplay systems, UI logic, editor tools and performance optimizations.",
+        "skills": "C++, Unreal Engine 5, Gameplay Systems, UI Programming, Optimization"
+      },
+      {
+        "title": "Dakar Desert Rally",
+        "subtitle": "Multiplayer Programmer",
+        "video": "https://www.youtube.com/embed/U9Qxc8Y-sEg",
+        "cover": "images/dakar.jpg",
+        "description": "Dakar Desert Rally captures the genuine speed and excitement of the largest rally race on the planet...",
+        "role": "Fixed server data not going to clients and session management bugs",
+        "skills": "C++, Unreal Engine 5, Networking"
+      }
+    ],
+    "personalprojects": 
+    [
       {
         "title": "RoadKings",
         "subtitle": "Console & PC Gameplay Programming",
@@ -19,4 +41,4 @@
         "skills": "C++, Unreal Engine 5, Networking"
       }
     ]
-  }
+}

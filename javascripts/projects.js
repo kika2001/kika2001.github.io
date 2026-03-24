@@ -1,4 +1,39 @@
+function parseItchioData(data) {
+    return data.games
+        .filter(game => game.published)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .map(game => ({
+            title: game.title,
+            url: game.url,
+            image: game.cover_url || "",
+            description: game.short_text || "No description available"
+        }));
+}
+
+function renderProjects(projects) {
+    const container = document.getElementById("projects");
+
+    projects.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <div class="card-text">
+                <h3>${p.title}</h3>
+                <p class="meta">${p.description}</p>
+                <a href="${p.url}" target="_blank">View Project</a>
+            </div>
+            <div class="card-image">
+                <img src="${p.image}" alt="${p.title}">
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
 const grid = document.getElementById("projectsGrid");
+const personalgrid = document.getElementById("personalProjectsGrid");
 
 const modal = document.getElementById("projectModal");
 const title = document.getElementById("modalTitle");
@@ -9,6 +44,7 @@ const skills = document.getElementById("modalSkills");
 const closeBtn = document.querySelector(".close");
 
 /* LOAD JSON */
+// Manually added games (professional games)
 fetch("projects.json")
     .then(res => res.json())
     .then(data => {
@@ -32,7 +68,32 @@ fetch("projects.json")
         });
     });
 
-    const cover = document.getElementById("modalCover");
+fetch("my-games.json") // your raw itch data file
+    .then(res => res.json())
+    .then(data => {
+        const projects = parseItchioData(data); // 👈 use parser
+
+        projects.forEach(project => {
+            const card = document.createElement("div");
+            card.className = "project-card";
+
+            card.innerHTML = `
+                <img src="${project.image}" alt="${project.title}">
+                <div class="project-card-content">
+                    <h3>${project.title}</h3>
+                    <p>${project.description}</p>
+                </div>
+            `;
+
+            card.addEventListener("click", () => {
+                window.open(project.url, "_blank");
+            });
+
+            personalgrid.appendChild(card);
+        });
+    });
+
+const cover = document.getElementById("modalCover");
 
 function openModal(project) {
     title.textContent = project.title;
