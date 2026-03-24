@@ -69,6 +69,14 @@ h2 {
     padding: 20px;
     border-radius: 10px;
     margin-top: 15px;
+
+    display: flex;           /* horizontal layout */
+    align-items: flex-start; /* align top of text with image */
+    gap: 20px;               /* space between text and image */
+}
+
+.card-text {
+    flex: 2;                 /* text takes more space */
 }
 
 .meta {
@@ -347,6 +355,20 @@ header {
 header.show {
     opacity: 1;
     transform: translateY(0);
+}
+
+.card-image {
+    flex: 1;                 /* image takes remaining space */
+    display: flex;
+    justify-content: flex-end; /* push image to the right */
+    align-items: flex-start;
+}
+
+.card-image img {
+    width: 100%;
+    max-width: 150px;        /* adjust as needed */
+    border-radius: 10px;
+    object-fit: cover;
 }
 
 /*------------ABOUT ME------------*/
