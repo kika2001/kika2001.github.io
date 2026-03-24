@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects | Ricardo Teixeira</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <link rel="stylesheet" href="styles/projects.css">
+</head>
+
+<body>
+
+    <script>
+        fetch("header.html")
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("header-placeholder").innerHTML = data;
+            });
+    </script>
+
+<div id="header-placeholder"></div>
+
+<div class="wip-page">
+    <div class="wip-content">
+        <h1 class="wip-title">WORK IN PROGRESS</h1>
+        <p class="wip-subtitle">Interactive Experience</p>
+
+        <p class="wip-description">
+            This experience is currently under development.
+            Come back later.
+        </p>
+
+        <div class="wip-bar"></div>
+    </div>
+</div>
+
+
+</body>
+
+<script>
+    fetch("footer.html")
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("footer-placeholder").innerHTML = data;
+        });
+</script>
+<div id="footer-placeholder"></div>
+
+</html>

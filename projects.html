@@ -1,54 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Projects | Ricardo Teixeira</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="projects.css">
+    <link rel="stylesheet" href="styles/styles.css">
+    <link rel="stylesheet" href="styles/projects.css">
 </head>
 
 <body>
 
-<header>
-    <div class="container">
-        <h1>Projects</h1>
-        <nav>
-            <a href="index.html">Home</a>
-        </nav>
-    </div>
-</header>
+    <script>
+        fetch("header.html")
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("header-placeholder").innerHTML = data;
+            });
+    </script>
+
+<div id="header-placeholder"></div>
 
 <section class="container">
     <h2>Featured Work</h2>
 
-    <div class="projects-grid">
-
-        <!-- PROJECT CARD -->
-        <div class="project-card"
-            data-title="RoadKings"
-            data-video="https://www.youtube.com/embed/VIDEO_ID"
-            data-description="AAA cross-platform project developed for PS5, Xbox Series and PC."
-            data-role="Implemented gameplay systems, UI logic, editor tools and performance optimizations."
-            data-skills="C++, Unreal Engine 5, Gameplay Systems, UI Programming, Optimization">
-
-            <h3>RoadKings</h3>
-            <p>Console & PC Gameplay Programming</p>
-        </div>
-
-        <!-- PROJECT CARD -->
-        <div class="project-card"
-            data-title="Interactive Mirror"
-            data-video="https://www.youtube.com/embed/VIDEO_ID"
-            data-description="Interactive Kinect-based installation that tracks body movement and applies dynamic outfits."
-            data-role="Lead programmer. Implemented body tracking integration and real-time character systems."
-            data-skills="C#, Unity, Azure Kinect, Real-time Systems">
-
-            <h3>Interactive Mirror</h3>
-            <p>Lead Programmer</p>
-        </div>
-
-    </div>
+    <div class="projects-grid" id="projectsGrid"></div>
 </section>
 
 <!-- MODAL -->
@@ -58,6 +34,8 @@
         <span class="close">&times;</span>
 
         <h2 id="modalTitle"></h2>
+
+        <img id="modalCover" class="modal-cover">
 
         <!-- TRAILER -->
         <div class="video-container">
@@ -79,6 +57,16 @@
     </div>
 </div>
 
-<script src="projects.js"></script>
+<script src="javascripts/projects.js"></script>
 </body>
+
+<script>
+    fetch("footer.html")
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("footer-placeholder").innerHTML = data;
+        });
+</script>
+<div id="footer-placeholder"></div>
+
 </html>

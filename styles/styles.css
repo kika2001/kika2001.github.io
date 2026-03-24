@@ -1,0 +1,352 @@
+:root {
+    --bg: #0f1115;
+    --panel: #191c22;
+    --text: #e6e6e6;
+    --accent: #4da3ff;
+    --muted: #9aa3ad;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+header {
+    background: var(--panel);
+    border-bottom: 1px solid #2a2f38;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+}
+
+.subtitle {
+    color: var(--accent);
+    margin-bottom: 15px;
+}
+
+nav a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+nav a:hover {
+    color: var(--accent);
+}
+
+h2 {
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: var(--panel);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+ul {
+    padding-left: 20px;
+}
+
+.links {
+    list-style: none;
+}
+
+.links li {
+    margin: 10px 0;
+}
+
+.links a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    border-top: 1px solid #2a2f38;
+}
+
+#mouse-trail-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.trail-image {
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 10px;
+    opacity: 0;
+    transform: scale(0.6);
+    animation: trailFade 1.2s ease-out forwards;
+}
+
+nav a[href="projects.html"] {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+@keyframes trailFade {
+    0% {
+        opacity: 0.9;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.4);
+    }
+}
+
+/*------------Interactive WIP------------*/
+
+.wip-overlay-fullscreen {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, #0f1115 0%, #05070a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    text-align: center;
+    overflow: hidden;
+}
+
+.wip-page {
+    min-height: calc(100vh - 80px); /* subtract header height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    background: radial-gradient(circle at center, #0f1115 0%, #05070a 100%);
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.wip-page {
+    min-height: calc(100vh - 80px); /* subtract header height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: radial-gradient(circle at center, #0f1115 0%, #05070a 100%);
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.wip-content {
+    max-width: 600px;
+    animation: fadeIn 1s ease;
+}
+
+.wip-title {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.wip-subtitle {
+    margin-top: 10px;
+    font-size: 1.2rem;
+    color: var(--accent);
+}
+
+.wip-description {
+    margin-top: 20px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.wip-bar {
+    margin-top: 30px;
+    height: 4px;
+    width: 100%;
+    background: #1a1f27;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.wip-bar::after {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 40%;
+    background: var(--accent);
+    animation: loading 1.5s infinite ease-in-out;
+}
+
+/* subtle background pattern */
+.wip-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(77,163,255,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+/* animations */
+@keyframes loading {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+    100% { transform: translateX(300%); }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/*------------Interactive WIP------------*/
+
+/*------------ABOUT ME------------*/
+/* FULL SCREEN HERO */
+.about-hero {
+    min-height: 100vh; /* full screen */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+/* LAYOUT */
+.about-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 60px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* TEXT SIDE */
+.about-content {
+    flex: 1;
+}
+
+/* IMAGE SIDE */
+.about-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.about-image img {
+    width: 100%;
+    max-width: 350px;
+    border-radius: 20px;
+    object-fit: cover;
+}
+
+/* TEXT STYLING */
+.about-hero h1 {
+    font-size: clamp(4rem, 10vw, 7rem);
+    font-weight: 800;
+}
+
+.subtle {
+    margin-top: 15px;
+    font-size: 1.2rem;
+    color: var(--muted);
+}
+
+.main-text {
+    margin-top: 25px;
+    font-size: 1.6rem;
+    line-height: 1.6;
+}
+
+/* FADE BASE */
+.fade {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.8s ease forwards;
+}
+
+/* IMAGE SLIDE-IN (override default) */
+.fade-4 {
+    animation: fadeSide 1s ease forwards;
+    animation-delay: 2s;
+}
+
+/* SEQUENCE */
+.fade-1 { animation-delay: 0.2s; }
+.fade-2 { animation-delay: 0.8s; }
+.fade-3 { animation-delay: 1.4s; }
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeSide {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+header {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+header.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/*------------ABOUT ME------------*/

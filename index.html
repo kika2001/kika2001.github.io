@@ -1,27 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ricardo Teixeira | Gameplay Programmer</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/styles.css">
 </head>
+
+<script>
+    fetch("header.html")
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("header-placeholder").innerHTML = data;
+        });
+
+        setTimeout(() => {
+        document.querySelector("header").classList.add("show");
+    }, 1800); // ⏱️ delay in milliseconds (2.5s)
+</script>
 
 <body>
 
-<header>
-    <div class="container">
-        <h1>Ricardo Teixeira</h1>
-        <p class="subtitle">Gameplay Programmer</p>
-        <nav>
-            <a href="#about">About</a>
-            <a href="#skills">Skills</a>
-            <a href="#experience">Experience</a>
-            <a href="#education">Education</a>
-            <a href="#links">Links</a>
-        </nav>
-    </div>
-</header>
+    <section class="about-hero">
+        <div class="about-content">
+            <h1 class="fade fade-1">HI!</h1>
+    
+            <p class="fade fade-2 subtle">
+                Nice to meet you! My name is Ricardo Teixeira.
+            </p>
+    
+            <p class="fade fade-3 main-text">
+                I'm a game programmer from Portugal, currently working in Saber Porto.
+                I've been doing games for more than 7+ years with the same energy since day one!
+            </p>
+        </div>
+
+         <!-- IMAGE -->
+         <div class="about-image fade fade-4">
+            <img src="images/me.jpg" alt="Ricardo Teixeira">
+        </div>
+    </section>
+
+<div id="header-placeholder"></div>
 
 <section id="about" class="container">
     <h2>About Me</h2>
@@ -141,9 +162,14 @@
     </ul>
 </section>
 
-<footer>
-    <p>© 2025 Ricardo Teixeira</p>
-</footer>
+<script>
+    fetch("footer.html")
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("footer-placeholder").innerHTML = data;
+        });
+</script>
+<div id="footer-placeholder"></div>
 
 </body>
 </html>
