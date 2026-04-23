@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TileArena — Multiplayer Checkers</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:#0d0d0f; --surface:#16161a; --surface2:#1e1e24;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.14);
+  --text:#f0ede8; --muted:#7a7a8a;
+  --accent:#c8f060; --accent-dim:rgba(200,240,96,0.12);
+  --red:#ff5c5c; --red-dim:rgba(255,92,92,0.12);
+  --blue:#5cb8ff; --p1:#ff5c5c; --p2:#5cb8ff; --gold:#ffd700;
+}
+
+body { font-family:'Syne',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+header { width:100%; padding:1.1rem 2rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); background:var(--surface); }
+.logo { font-size:1.4rem; font-weight:800; letter-spacing:-0.02em; }
+.logo span { color:var(--accent); }
+.hdr-right { display:flex; align-items:center; gap:1.25rem; }
+.dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 6px var(--accent); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.conn-status { font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--muted); display:flex; align-items:center; gap:6px; }
+
+/* screens */
+.screen { display:none; width:100%; max-width:1000px; padding:2rem 1.5rem; }
+.screen.active { display:block; }
+
+/* cards */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; }
+.card h2 { font-size:0.72rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+
+/* inputs / buttons */
+input[type=text] { width:100%; background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:0.65rem 1rem; font-family:'Space Mono',monospace; font-size:0.88rem; color:var(--text); outline:none; transition:border-color .2s; }
+input[type=text]:focus { border-color:var(--accent); }
+.btn { font-family:'Syne',sans-serif; font-weight:700; font-size:0.88rem; padding:0.65rem 1.4rem; border-radius:8px; border:none; cursor:pointer; transition:all .15s; letter-spacing:.02em; }
+.btn:active { transform:scale(.97); }
+.btn-primary { background:var(--accent); color:#0d0d0f; }
+.btn-primary:hover { filter:brightness(1.1); }
+.btn-ghost { background:transparent; border:1px solid var(--border2); color:var(--text); }
+.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+.btn-danger { background:transparent; border:1px solid rgba(255,92,92,.4); color:var(--red); }
+.btn-danger:hover { background:var(--red-dim); }
+.btn-sm { padding:.45rem 1rem; font-size:.8rem; }
+
+/* lobby */
+.lobby-hero { margin-top:2rem; margin-bottom:2rem; }
+.lobby-hero .eyebrow { font-size:.72rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:.5rem; }
+.lobby-hero h1 { font-size:2.4rem; font-weight:800; letter-spacing:-.03em; line-height:1.1; }
+.lobby-hero h1 span { color:var(--accent); }
+
+.lobby-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+.full-col { grid-column:1/-1; }
+
+/* room code display */
+.room-code-box { background:var(--surface2); border:1px solid var(--border2); border-radius:10px; padding:1.25rem; margin-bottom:1rem; }
+.room-code-label { font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.5rem; }
+.room-code { font-family:'Space Mono',monospace; font-size:2rem; font-weight:700; letter-spacing:.2em; color:var(--accent); display:flex; align-items:center; gap:1rem; }
+.copy-btn { font-family:'Space Mono',monospace; font-size:.7rem; padding:.3rem .75rem; border-radius:6px; background:var(--accent-dim); border:1px solid rgba(200,240,96,.3); color:var(--accent); cursor:pointer; transition:all .15s; }
+.copy-btn:hover { background:rgba(200,240,96,.2); }
+
+/* status messages */
+.status-msg { font-family:'Space Mono',monospace; font-size:.78rem; padding:.65rem .9rem; border-radius:8px; margin-top:.75rem; }
+.status-info { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(200,240,96,.2); }
+.status-err { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,92,92,.2); }
+.status-wait { background:var(--surface2); color:var(--muted); border:1px solid var(--border2); }
+
+/* rules */
+.rules-list { display:flex; flex-direction:column; gap:.55rem; }
+.rule-item { display:flex; gap:.75rem; font-size:.82rem; color:var(--muted); line-height:1.5; }
+.rule-num { font-family:'Space Mono',monospace; font-size:.7rem; color:var(--accent); min-width:18px; font-weight:700; margin-top:1px; }
+
+/* spinner */
+.spinner { width:40px; height:40px; border:3px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* GAME SCREEN */
+.game-layout { display:grid; grid-template-columns:200px 1fr 200px; gap:1rem; margin-top:1.25rem; align-items:start; }
+.player-panel { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; transition:border-color .3s; }
+.panel-active { border-color:rgba(200,240,96,.35); }
+.panel-name { font-weight:800; font-size:.95rem; margin-bottom:.3rem; display:flex; align-items:center; gap:.5rem; }
+.pip { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+.pip.p1 { background:var(--p1); box-shadow:0 0 5px var(--p1); }
+.pip.p2 { background:var(--p2); box-shadow:0 0 5px var(--p2); }
+.panel-score { font-family:'Space Mono',monospace; font-size:2rem; font-weight:700; margin:.4rem 0; }
+.panel-lbl { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
+.stat-row { display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:.73rem; color:var(--muted); padding:.28rem 0; border-bottom:1px solid var(--border); }
+.stat-row span:last-child { color:var(--text); }
+.turn-badge { margin-top:.9rem; padding:.45rem .8rem; border-radius:6px; font-size:.72rem; font-family:'Space Mono',monospace; text-align:center; }
+.turn-yours { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(200,240,96,.25); }
+.turn-wait { background:var(--surface2); color:var(--muted); }
+
+/* board */
+.board-wrap { display:flex; flex-direction:column; align-items:center; gap:.75rem; }
+#board { display:grid; grid-template-columns:repeat(8,60px); grid-template-rows:repeat(8,60px); border:2px solid var(--border2); border-radius:4px; overflow:hidden; box-shadow:0 0 40px rgba(0,0,0,.5); }
+.cell { width:60px; height:60px; display:flex; align-items:center; justify-content:center; position:relative; transition:background .1s; }
+.cell.dark { background:#1a1a22; }
+.cell.light { background:#24242e; }
+.cell.hl { background:rgba(200,240,96,.14) !important; cursor:pointer; }
+.cell.hl::after { content:''; position:absolute; width:20px; height:20px; border-radius:50%; background:rgba(200,240,96,.35); border:2px solid var(--accent); pointer-events:none; }
+.cell.sel { background:rgba(200,240,96,.07) !important; }
+.piece { width:44px; height:44px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; position:relative; z-index:1; border:2px solid transparent; user-select:none; }
+.piece.p1 { background:radial-gradient(circle at 38% 36%,#ff8a8a,var(--p1)); border-color:rgba(255,92,92,.5); box-shadow:0 3px 10px rgba(255,92,92,.4); }
+.piece.p2 { background:radial-gradient(circle at 38% 36%,#8ad3ff,var(--p2)); border-color:rgba(92,184,255,.5); box-shadow:0 3px 10px rgba(92,184,255,.4); }
+.piece.king::after { content:'♛'; font-size:18px; color:var(--gold); text-shadow:0 0 8px var(--gold); }
+.piece.picked { transform:scale(1.13); box-shadow:0 0 0 3px var(--accent),0 4px 16px rgba(200,240,96,.4); }
+.piece:hover:not(.picked) { transform:scale(1.06); }
+
+/* log */
+.game-log { max-height:130px; overflow-y:auto; display:flex; flex-direction:column; gap:.28rem; padding:.6rem; background:var(--surface2); border:1px solid var(--border); border-radius:8px; width:480px; }
+.log-e { font-family:'Space Mono',monospace; font-size:.68rem; color:var(--muted); animation:fi .3s ease; }
+.log-e.hi { color:var(--accent); }
+.log-e.cap { color:var(--red); }
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.game-controls { display:flex; gap:.75rem; }
+
+/* modal */
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:200; align-items:center; justify-content:center; }
+.modal-bg.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border2); border-radius:16px; padding:2.5rem; text-align:center; max-width:360px; width:90%; animation:pop .25s cubic-bezier(.34,1.56,.64,1); }
+@keyframes pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.modal h2 { font-size:2rem; font-weight:800; margin-bottom:.4rem; }
+.modal p { color:var(--muted); font-size:.88rem; margin-bottom:1.5rem; }
+.modal-btns { display:flex; gap:.75rem; justify-content:center; }
+.trophy { font-size:3rem; margin-bottom:.75rem; }
+
+/* connection overlay */
+.conn-overlay { position:fixed; bottom:1.5rem; right:1.5rem; background:var(--surface); border:1px solid var(--border2); border-radius:10px; padding:.9rem 1.25rem; font-family:'Space Mono',monospace; font-size:.75rem; display:flex; align-items:center; gap:.75rem; z-index:100; animation:fi .3s ease; }
+.conn-overlay.hidden { display:none; }
+
+@media(max-width:720px) {
+  .lobby-grid { grid-template-columns:1fr; }
+  .full-col { grid-column:1; }
+  .game-layout { grid-template-columns:1fr; }
+  #board { grid-template-columns:repeat(8,42px); grid-template-rows:repeat(8,42px); }
+  .cell { width:42px; height:42px; }
+  .piece { width:32px; height:32px; }
+  .piece.king::after { font-size:13px; }
+  .game-log { width:100%; }
+}
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Tile<span>Arena</span></div>
+  <div class="hdr-right">
+    <div class="conn-status">
+      <span class="dot" id="dot"></span>
+      <span id="conn-label">Initializing…</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══ LOBBY ══ -->
+<div id="screen-lobby" class="screen active">
+  <div class="lobby-hero">
+    <div class="eyebrow">P2P Multiplayer · No server needed</div>
+    <h1>Join the arena.<br><span>Claim the board.</span></h1>
+  </div>
+
+  <div style="margin-bottom:1.25rem">
+    <input type="text" id="player-name" placeholder="Your name…" maxlength="20" style="max-width:320px" />
+  </div>
+
+  <div class="lobby-grid">
+
+    <!-- HOST -->
+    <div class="card">
+      <h2>Host a Game</h2>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">Create a room and share the code with your opponent.</p>
+      <button class="btn btn-primary" onclick="hostGame()" id="btn-host">Create Room</button>
+      <div id="host-area" style="display:none;margin-top:1rem">
+        <div class="room-code-box">
+          <div class="room-code-label">Room Code — share this</div>
+          <div class="room-code">
+            <span id="my-room-code">—</span>
+            <button class="copy-btn" onclick="copyCode()">Copy</button>
+          </div>
+        </div>
+        <div class="status-msg status-wait" id="host-status">Waiting for opponent to join…</div>
+      </div>
+    </div>
+
+    <!-- JOIN -->
+    <div class="card">
+      <h2>Join a Game</h2>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">Enter the room code your opponent shared with you.</p>
+      <div style="display:flex;gap:.75rem;margin-bottom:.75rem">
+        <input type="text" id="join-code" placeholder="Room code…" maxlength="8" style="text-transform:uppercase;letter-spacing:.1em;font-family:'Space Mono',monospace" />
+        <button class="btn btn-primary" onclick="joinGame()" id="btn-join">Join</button>
+      </div>
+      <div id="join-status" class="status-msg status-wait" style="display:none"></div>
+    </div>
+
+    <!-- RULES -->
+    <div class="card full-col">
+      <h2>Rules</h2>
+      <div class="rules-list">
+        <div class="rule-item"><span class="rule-num">01</span><span>Pieces move diagonally on dark squares only.</span></div>
+        <div class="rule-item"><span class="rule-num">02</span><span>Jump over an opponent's piece to capture it. Captures are mandatory.</span></div>
+        <div class="rule-item"><span class="rule-num">03</span><span>Chain multiple captures in one turn when possible.</span></div>
+        <div class="rule-item"><span class="rule-num">04</span><span>Reach the far end of the board to become a King — kings move in any diagonal direction.</span></div>
+        <div class="rule-item"><span class="rule-num">05</span><span>Capture all enemy pieces, or leave them with no legal moves, to win.</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="screen-game" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+    <div>
+      <div style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Match in progress</div>
+      <div style="font-size:1.05rem;font-weight:800;margin-top:.2rem" id="game-title">Game</div>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:.8rem;color:var(--muted)" id="game-timer">0:00</div>
+  </div>
+
+  <div class="game-layout">
+    <div class="player-panel" id="panel-p1">
+      <div class="panel-name"><div class="pip p1"></div><span id="p1-name">Red</span></div>
+      <div class="panel-lbl">Pieces</div>
+      <div class="panel-score" id="p1-score">12</div>
+      <div class="stat-row"><span>Captures</span><span id="p1-cap">0</span></div>
+      <div class="stat-row"><span>Kings</span><span id="p1-kings">0</span></div>
+      <div class="turn-badge turn-wait" id="p1-turn">Waiting…</div>
+    </div>
+
+    <div class="board-wrap">
+      <div id="board"></div>
+      <div class="game-log" id="game-log"></div>
+      <div class="game-controls">
+        <button class="btn btn-ghost btn-sm" onclick="resignGame()">Resign</button>
+      </div>
+    </div>
+
+    <div class="player-panel" id="panel-p2">
+      <div class="panel-name"><div class="pip p2"></div><span id="p2-name">Blue</span></div>
+      <div class="panel-lbl">Pieces</div>
+      <div class="panel-score" id="p2-score">12</div>
+      <div class="stat-row"><span>Captures</span><span id="p2-cap">0</span></div>
+      <div class="stat-row"><span>Kings</span><span id="p2-kings">0</span></div>
+      <div class="turn-badge turn-wait" id="p2-turn">Waiting…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="trophy" id="m-trophy">🏆</div>
+    <h2 id="m-title">Victory!</h2>
+    <p id="m-msg">Game over</p>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="backToLobby()">Back to Lobby</button>
+    </div>
+  </div>
+</div>
+
+<!-- PeerJS CDN -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  TileArena — Real P2P Multiplayer via PeerJS/WebRTC
+//  Works on GitHub Pages (static hosting, no server)
+// ═══════════════════════════════════════════════════
+
+let peer = null;       // PeerJS instance
+let conn = null;       // active DataConnection
+let myRole = null;     // 'p1' | 'p2'
+let myName = '';
+let oppName = '';
+let isHost = false;
+
+// Game state (host is authoritative)
+let G = null;          // board state
+let sel = null;        // selected cell index
+let validMoves = [];
+let timerInterval = null;
+let gameSeconds = 0;
+
+// ── PeerJS Init ──────────────────────────────────
+function initPeer(onReady) {
+  setConnLabel('Connecting to relay…');
+  peer = new Peer({ debug: 0 });
+  peer.on('open', id => {
+    setConnLabel('Ready · ' + id.slice(0,8));
+    if (onReady) onReady(id);
+  });
+  peer.on('error', e => {
+    setConnLabel('Error: ' + e.type);
+    showStatus('join-status', 'Connection error: ' + e.type, 'err');
+  });
+  peer.on('disconnected', () => {
+    setConnLabel('Disconnected');
+    peer.reconnect();
+  });
+}
+
+function setConnLabel(txt) {
+  document.getElementById('conn-label').textContent = txt;
+}
+
+// ── Host ────────────────────────────────────────
+function hostGame() {
+  myName = document.getElementById('player-name').value.trim() || 'Host';
+  document.getElementById('host-area').style.display = 'block';
+  document.getElementById('btn-host').disabled = true;
+  document.getElementById('btn-host').textContent = 'Waiting…';
+
+  initPeer(peerId => {
+    // Room code = last 6 chars of peer ID, uppercase
+    const code = peerId.slice(-6).toUpperCase();
+    document.getElementById('my-room-code').textContent = code;
+
+    // Listen for incoming connection
+    peer.on('connection', incoming => {
+      conn = incoming;
+      isHost = true;
+      myRole = 'p1';
+      setupConn();
+    });
+  });
+}
+
+function copyCode() {
+  const code = document.getElementById('my-room-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+// ── Join ────────────────────────────────────────
+function joinGame() {
+  myName = document.getElementById('player-name').value.trim() || 'Guest';
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (code.length < 4) { showStatus('join-status','Enter a valid room code','err'); return; }
+
+  showStatus('join-status', 'Searching for room…', 'wait');
+  document.getElementById('btn-join').disabled = true;
+
+  initPeer(myPeerId => {
+    // Reconstruct the host's peer ID by finding their peer
+    // The host's peer ID ends with the room code (lowercase)
+    // We need to connect to the right peer — done via code lookup
+    // Since PeerJS free server uses random IDs, we embed the code into the peer ID
+    // We do this by having the host include the code as a suffix in their ID
+    // Actually: we generate the host peerId from code using a known prefix trick:
+    // Re-approach: host's peerId slice(-6).toUpperCase() === code
+    // So we need to search — not possible without a server.
+    // Solution: host generates peer with a FIXED id = "tilearena-" + randomPart,
+    // and the code IS the full peer ID shown. Let's restart with fixed IDs.
+    showStatus('join-status', 'Connecting to room ' + code + '…', 'wait');
+
+    // The room code is the peer ID (host generates with custom ID)
+    conn = peer.connect('tilearena-' + code.toLowerCase(), { reliable: true });
+    isHost = false;
+    myRole = 'p2';
+    conn.on('open', () => setupConn());
+    conn.on('error', e => {
+      showStatus('join-status', 'Could not connect. Check the code and try again.', 'err');
+      document.getElementById('btn-join').disabled = false;
+    });
+    setTimeout(() => {
+      if (conn && conn.open === false) {
+        showStatus('join-status', 'Room not found or timed out.', 'err');
+        document.getElementById('btn-join').disabled = false;
+      }
+    }, 8000);
+  });
+}
+
+// ── Connection setup ────────────────────────────
+function setupConn() {
+  conn.on('data', onData);
+  conn.on('close', () => {
+    if (document.getElementById('screen-game').classList.contains('active')) {
+      endGame(myRole === 'p1' ? 'p2' : 'p1', 'Opponent disconnected');
+    }
+  });
+  conn.on('error', () => {
+    showStatus('join-status', 'Connection lost.', 'err');
+  });
+
+  // Exchange names
+  send({ type: 'hello', name: myName });
+
+  if (isHost) {
+    showStatus('host-status', 'Opponent connected! Starting…', 'info');
+  } else {
+    showStatus('join-status', 'Connected! Waiting for game to start…', 'info');
+  }
+}
+
+// ── Messaging ───────────────────────────────────
+function send(obj) {
+  if (conn && conn.open) conn.send(obj);
+}
+
+function onData(msg) {
+  switch (msg.type) {
+    case 'hello':
+      oppName = msg.name;
+      if (isHost) {
+        // Both connected — host starts the game
+        G = createGame();
+        send({ type: 'start', oppName: myName, board: G.board, captures: G.captures });
+        startGame(myName, oppName);
+      } else {
+        // Joiner waits for 'start'
+      }
+      break;
+    case 'start':
+      oppName = msg.oppName;
+      G = createGame();
+      G.board = msg.board;
+      G.captures = msg.captures;
+      startGame(oppName, myName);
+      break;
+    case 'move':
+      applyRemoteMove(msg);
+      break;
+    case 'resign':
+      endGame(myRole === 'p1' ? 'p1' : 'p2', msg.name + ' resigned');
+      break;
+  }
+}
+
+// ── Game Init ───────────────────────────────────
+function createGame() {
+  const board = Array(64).fill(null);
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if ((r + c) % 2 !== 1) continue;
+      const idx = r * 8 + c;
+      if (r < 3) board[idx] = { player: 'p2', king: false };
+      if (r > 4) board[idx] = { player: 'p1', king: false };
+    }
+  }
+  return { board, turn: 'p1', captures: { p1: 0, p2: 0 } };
+}
+
+function startGame(p1n, p2n) {
+  document.getElementById('p1-name').textContent = p1n;
+  document.getElementById('p2-name').textContent = p2n;
+  document.getElementById('game-title').textContent = p1n + ' vs ' + p2n;
+  G.turn = 'p1';
+  sel = null; validMoves = [];
+  showScreen('screen-game');
+  renderBoard();
+  updatePanels();
+  startTimer();
+  log('Game started! ' + p1n + ' (Red) goes first.', 'hi');
+}
+
+// ── Timer ───────────────────────────────────────
+function startTimer() {
+  gameSeconds = 0;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    gameSeconds++;
+    const m = Math.floor(gameSeconds / 60);
+    const s = gameSeconds % 60;
+    document.getElementById('game-timer').textContent = m + ':' + String(s).padStart(2,'0');
+  }, 1000);
+}
+
+// ── Board Rendering ─────────────────────────────
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  for (let idx = 0; idx < 64; idx++) {
+    const row = Math.floor(idx / 8), col = idx % 8;
+    const dark = (row + col) % 2 === 1;
+    const piece = G.board[idx];
+    const cell = document.createElement('div');
+    cell.className = 'cell ' + (dark ? 'dark' : 'light');
+    if (sel === idx) cell.classList.add('sel');
+    if (validMoves.some(m => m.to === idx)) {
+      cell.classList.add('hl');
+      cell.addEventListener('click', () => doMove(idx));
+    }
+    if (piece) {
+      const p = document.createElement('div');
+      p.className = 'piece ' + piece.player + (piece.king ? ' king' : '') + (sel === idx ? ' picked' : '');
+      if (piece.player === myRole && G.turn === myRole) {
+        p.addEventListener('click', () => selectPiece(idx));
+      }
+      cell.appendChild(p);
+    }
+    board.appendChild(cell);
+  }
+}
+
+// ── Selection & Moves ───────────────────────────
+function selectPiece(idx) {
+  if (G.turn !== myRole) return;
+  const moves = getMoves(idx, G.board);
+  // Enforce mandatory capture
+  const allJumps = getAllJumps(myRole, G.board);
+  if (allJumps.length > 0 && !moves.some(m => m.cap.length > 0)) {
+    log('Must capture when possible!');
+    return;
+  }
+  sel = idx;
+  validMoves = moves;
+  renderBoard();
+}
+
+function doMove(toIdx) {
+  const mv = validMoves.find(m => m.to === toIdx);
+  if (!mv) return;
+  const board = G.board.map(p => p ? {...p} : null);
+  board[toIdx] = {...board[mv.from]};
+  board[mv.from] = null;
+  mv.cap.forEach(ci => { board[ci] = null; });
+  const captures = mv.cap.length;
+  if (captures > 0) G.captures[myRole] += captures;
+  // King promotion
+  const toRow = Math.floor(toIdx / 8);
+  let kinged = false;
+  if (myRole === 'p1' && toRow === 0) { board[toIdx].king = true; kinged = true; }
+  if (myRole === 'p2' && toRow === 7) { board[toIdx].king = true; kinged = true; }
+  G.board = board;
+  G.turn = myRole === 'p1' ? 'p2' : 'p1';
+  sel = null; validMoves = [];
+  if (captures > 0) log((myRole === 'p1' ? document.getElementById('p1-name').textContent : document.getElementById('p2-name').textContent) + ' captured ' + captures + ' piece' + (captures > 1 ? 's' : '') + '!', 'cap');
+  if (kinged) log('King! ♛', 'hi');
+  // Send to opponent
+  send({ type: 'move', board: G.board, captures: G.captures, turn: G.turn });
+  renderBoard();
+  updatePanels();
+  checkWin();
+}
+
+function applyRemoteMove(msg) {
+  G.board = msg.board;
+  G.captures = msg.captures;
+  G.turn = msg.turn;
+  sel = null; validMoves = [];
+  renderBoard();
+  updatePanels();
+  checkWin();
+  const opp = myRole === 'p1' ? document.getElementById('p2-name').textContent : document.getElementById('p1-name').textContent;
+  log(opp + ' moved.');
+}
+
+// ── Move Calculation ────────────────────────────
+function getMoves(idx, board) {
+  const piece = board[idx];
+  if (!piece) return [];
+  const row = Math.floor(idx / 8), col = idx % 8;
+  const moves = [];
+  const drs = [];
+  if (piece.player === 'p1' || piece.king) drs.push(-1);
+  if (piece.player === 'p2' || piece.king) drs.push(1);
+  for (const dr of drs) {
+    for (const dc of [-1, 1]) {
+      const nr = row + dr, nc = col + dc;
+      if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
+      const nidx = nr * 8 + nc;
+      if (!board[nidx]) {
+        moves.push({ from: idx, to: nidx, cap: [] });
+      } else if (board[nidx].player !== piece.player) {
+        const jr = row + dr * 2, jc = col + dc * 2;
+        if (jr < 0 || jr > 7 || jc < 0 || jc > 7) continue;
+        const jidx = jr * 8 + jc;
+        if (!board[jidx]) moves.push({ from: idx, to: jidx, cap: [nidx] });
+      }
+    }
+  }
+  return moves;
+}
+
+function getAllJumps(player, board) {
+  const jumps = [];
+  board.forEach((p, i) => {
+    if (p?.player === player) jumps.push(...getMoves(i, board).filter(m => m.cap.length > 0));
+  });
+  return jumps;
+}
+
+// ── UI Updates ──────────────────────────────────
+function updatePanels() {
+  const b = G.board;
+  const p1c = b.filter(p => p?.player === 'p1').length;
+  const p2c = b.filter(p => p?.player === 'p2').length;
+  const p1k = b.filter(p => p?.player === 'p1' && p.king).length;
+  const p2k = b.filter(p => p?.player === 'p2' && p.king).length;
+  document.getElementById('p1-score').textContent = p1c;
+  document.getElementById('p2-score').textContent = p2c;
+  document.getElementById('p1-cap').textContent = G.captures.p1;
+  document.getElementById('p2-cap').textContent = G.captures.p2;
+  document.getElementById('p1-kings').textContent = p1k;
+  document.getElementById('p2-kings').textContent = p2k;
+  const t = G.turn;
+  const p1t = document.getElementById('p1-turn');
+  const p2t = document.getElementById('p2-turn');
+  p1t.className = 'turn-badge ' + (t === 'p1' ? 'turn-yours' : 'turn-wait');
+  p1t.textContent = t === 'p1' ? (myRole === 'p1' ? '⚡ Your turn' : "Opponent's turn") : 'Waiting…';
+  p2t.className = 'turn-badge ' + (t === 'p2' ? 'turn-yours' : 'turn-wait');
+  p2t.textContent = t === 'p2' ? (myRole === 'p2' ? '⚡ Your turn' : "Opponent's turn") : 'Waiting…';
+  document.getElementById('panel-p1').className = 'player-panel' + (t === 'p1' ? ' panel-active' : '');
+  document.getElementById('panel-p2').className = 'player-panel' + (t === 'p2' ? ' panel-active' : '');
+}
+
+// ── Win Check ───────────────────────────────────
+function checkWin() {
+  const b = G.board;
+  const p1 = b.filter(p => p?.player === 'p1').length;
+  const p2 = b.filter(p => p?.player === 'p2').length;
+  if (p1 === 0) endGame('p2', 'All red pieces captured');
+  else if (p2 === 0) endGame('p1', 'All blue pieces captured');
+}
+
+// ── Game End ────────────────────────────────────
+function endGame(winner, reason) {
+  clearInterval(timerInterval);
+  const isWinner = winner === myRole;
+  document.getElementById('m-trophy').textContent = isWinner ? '🏆' : '💀';
+  document.getElementById('m-title').textContent = isWinner ? 'Victory!' : 'Defeated';
+  document.getElementById('m-msg').textContent = reason;
+  document.getElementById('modal').classList.add('open');
+}
+
+function resignGame() {
+  if (!confirm('Resign this game?')) return;
+  send({ type: 'resign', name: myName });
+  endGame(myRole === 'p1' ? 'p2' : 'p1', myName + ' resigned');
+}
+
+// ── Log ─────────────────────────────────────────
+function log(text, cls = '') {
+  const el = document.getElementById('game-log');
+  const e = document.createElement('div');
+  e.className = 'log-e ' + cls;
+  const t = new Date();
+  e.textContent = '[' + String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0') + '] ' + text;
+  el.appendChild(e);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Navigation ───────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function backToLobby() {
+  document.getElementById('modal').classList.remove('open');
+  clearInterval(timerInterval);
+  if (conn) { conn.close(); conn = null; }
+  if (peer) { peer.destroy(); peer = null; }
+  myRole = null; G = null; sel = null; validMoves = [];
+  document.getElementById('host-area').style.display = 'none';
+  document.getElementById('btn-host').disabled = false;
+  document.getElementById('btn-host').textContent = 'Create Room';
+  document.getElementById('btn-join').disabled = false;
+  document.getElementById('join-code').value = '';
+  document.getElementById('join-status').style.display = 'none';
+  document.getElementById('host-status').textContent = 'Waiting for opponent to join…';
+  document.getElementById('host-status').className = 'status-msg status-wait';
+  document.getElementById('conn-label').textContent = 'Disconnected';
+  showScreen('screen-lobby');
+}
+
+// ── Status helpers ───────────────────────────────
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.textContent = msg;
+  el.className = 'status-msg status-' + type;
+}
+
+// ═══════════════════════════════════════════════════
+//  HOST ID TRICK: Override PeerJS to use a fixed ID
+//  so the room code IS the peer ID suffix.
+//  We patch hostGame() to use a predictable peer ID.
+// ═══════════════════════════════════════════════════
+
+// Override hostGame to use a fixed peer ID based on random code
+const _origHostGame = hostGame;
+hostGame = function() {
+  myName = document.getElementById('player-name').value.trim() || 'Host';
+  document.getElementById('host-area').style.display = 'block';
+  document.getElementById('btn-host').disabled = true;
+  document.getElementById('btn-host').textContent = 'Creating room…';
+
+  // Generate a short random code
+  const code = Math.random().toString(36).slice(2,8).toUpperCase();
+  const peerId = 'tilearena-' + code.toLowerCase();
+
+  setConnLabel('Connecting…');
+  peer = new Peer(peerId, { debug: 0 });
+  peer.on('open', id => {
+    setConnLabel('Hosting · ' + code);
+    document.getElementById('my-room-code').textContent = code;
+    document.getElementById('btn-host').textContent = 'Room Open';
+    showStatus('host-status', 'Share code "' + code + '" with your opponent', 'info');
+    peer.on('connection', incoming => {
+      conn = incoming;
+      isHost = true;
+      myRole = 'p1';
+      setupConn();
+    });
+  });
+  peer.on('error', e => {
+    // If peer ID taken (rare), retry
+    if (e.type === 'unavailable-id') {
+      peer.destroy();
+      hostGame();
+    } else {
+      setConnLabel('Error');
+      showStatus('host-status', 'Error: ' + e.type, 'err');
+      document.getElementById('btn-host').disabled = false;
+      document.getElementById('btn-host').textContent = 'Create Room';
+    }
+  });
+};
+</script>
+</body>
+</html>
