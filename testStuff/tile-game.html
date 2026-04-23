@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TileArena — Multiplayer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --muted: #7a7a8a;
+    --accent: #c8f060;
+    --accent-dim: rgba(200,240,96,0.12);
+    --red: #ff5c5c;
+    --red-dim: rgba(255,92,92,0.12);
+    --blue: #5cb8ff;
+    --blue-dim: rgba(92,184,255,0.12);
+    --p1: #ff5c5c;
+    --p2: #5cb8ff;
+    --king-glow: #ffd700;
+  }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .status-bar {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── SCREENS ── */
+  .screen { display: none; width: 100%; max-width: 960px; padding: 2rem 1.5rem; }
+  .screen.active { display: block; }
+
+  /* ── LOBBY ── */
+  .lobby-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .card h2 {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .player-setup { grid-column: 1 / -1; }
+
+  .name-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.65rem 1.4rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0d0d0f;
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: transparent;
+    border: 1px solid rgba(255,92,92,0.4);
+    color: var(--red);
+  }
+  .btn-danger:hover { background: var(--red-dim); }
+
+  /* Queue */
+  .queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 80px;
+    margin-bottom: 1rem;
+  }
+
+  .queue-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    animation: slideIn 0.2s ease;
+  }
+
+  .queue-entry.me { border-color: rgba(200,240,96,0.3); }
+
+  .queue-entry .badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .badge-waiting { background: rgba(255,200,0,0.15); color: #ffc800; }
+  .badge-playing { background: var(--accent-dim); color: var(--accent); }
+  .badge-you { background: var(--accent-dim); color: var(--accent); }
+
+  @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+  .empty-state {
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-family: 'Space Mono', monospace;
+    text-align: center;
+    padding: 1.5rem;
+  }
+
+  /* Rules */
+  .rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .rule-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .rule-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    min-width: 18px;
+    margin-top: 1px;
+    font-weight: 700;
+  }
+
+  /* ── GAME SCREEN ── */
+  .game-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    align-items: start;
+  }
+
+  .player-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .player-panel.active-panel { border-color: rgba(200,240,96,0.3); }
+
+  .panel-name {
+    font-weight: 800;
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .piece-icon {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .piece-icon.p1 { background: var(--p1); box-shadow: 0 0 6px var(--p1); }
+  .piece-icon.p2 { background: var(--p2); box-shadow: 0 0 6px var(--p2); }
+
+  .panel-score {
+    font-family: 'Space Mono', monospace;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+  }
+
+  .panel-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .turn-indicator {
+    margin-top: 1rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+    text-align: center;
+  }
+
+  .turn-indicator.your-turn {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(200,240,96,0.3);
+  }
+
+  .turn-indicator.waiting {
+    background: var(--surface2);
+    color: var(--muted);
+  }
+
+  /* Board */
+  .board-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .board-container {
+    position: relative;
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
+    border: 2px solid var(--border2);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+
+  .cell {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    position: relative;
+    transition: background 0.1s;
+  }
+
+  .cell.dark { background: #1a1a22; }
+  .cell.light { background: #2a2a38; }
+
+  .cell.highlight { background: rgba(200,240,96,0.15) !important; cursor: pointer; }
+  .cell.highlight::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(200,240,96,0.4);
+    border: 2px solid var(--accent);
+  }
+
+  .cell.selected { background: rgba(200,240,96,0.08) !important; }
+
+  .piece {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    border: 2px solid transparent;
+  }
+
+  .piece.p1 {
+    background: radial-gradient(circle at 38% 36%, #ff8a8a, var(--p1));
+    border-color: rgba(255,92,92,0.5);
+    box-shadow: 0 3px 12px rgba(255,92,92,0.4);
+  }
+
+  .piece.p2 {
+    background: radial-gradient(circle at 38% 36%, #8ad3ff, var(--p2));
+    border-color: rgba(92,184,255,0.5);
+    box-shadow: 0 3px 12px rgba(92,184,255,0.4);
+  }
+
+  .piece.king::after {
+    content: '♛';
+    font-size: 18px;
+    color: var(--king-glow);
+    text-shadow: 0 0 8px var(--king-glow);
+  }
+
+  .piece.selected-piece {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 3px var(--accent), 0 4px 16px rgba(200,240,96,0.4);
+  }
+
+  .piece:hover { transform: scale(1.06); }
+  .piece.selected-piece:hover { transform: scale(1.12); }
+
+  /* Game log */
+  .game-log {
+    max-height: 160px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.5rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 480px;
+  }
+
+  .log-entry {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    animation: fadeIn 0.3s ease;
+  }
+
+  .log-entry.important { color: var(--accent); }
+  .log-entry.capture { color: var(--red); }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .game-controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+    max-width: 380px;
+    width: 90%;
+    animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes popIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+
+  .modal h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+  .modal p { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.9rem; }
+  .modal .trophy { font-size: 3rem; margin-bottom: 0.75rem; }
+
+  /* Waiting screen */
+  #screen-waiting { text-align: center; padding-top: 5rem; }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 1.5rem auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .waiting-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+  }
+
+  .match-found-banner {
+    background: var(--accent-dim);
+    border: 1px solid rgba(200,240,96,0.3);
+    border-radius: 10px;
+    padding: 0.9rem 1.5rem;
+    color: var(--accent);
+    font-weight: 700;
+    margin-top: 1.5rem;
+    display: none;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-direction: column;
+    margin-top: 0.75rem;
+  }
+
+  .stat {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat span:last-child { color: var(--text); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  @media (max-width: 700px) {
+    .lobby-grid { grid-template-columns: 1fr; }
+    .player-setup { grid-column: 1; }
+    .game-layout { grid-template-columns: 1fr; }
+    #board { grid-template-columns: repeat(8, 44px); grid-template-rows: repeat(8, 44px); }
+    .cell { width: 44px; height: 44px; }
+    .piece { width: 32px; height: 32px; }
+    .game-log { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Tile<span>Arena</span></div>
+  <div class="status-bar">
+    <span><span class="dot"></span> LIVE</span>
+    <span id="hdr-players">0 players online</span>
+    <span id="hdr-games">0 games active</span>
+  </div>
+</header>
+
+<!-- LOBBY -->
+<div id="screen-lobby" class="screen active">
+  <div style="margin-top:2rem">
+    <div style="font-size:0.75rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem">Multiplayer</div>
+    <h1 style="font-size:2.4rem;font-weight:800;letter-spacing:-0.03em;line-height:1.1">
+      Join the arena.<br><span style="color:var(--accent)">Claim the board.</span>
+    </h1>
+  </div>
+
+  <div class="lobby-grid">
+    <!-- Player Setup -->
+    <div class="card player-setup">
+      <h2>Your Profile</h2>
+      <div class="name-row">
+        <input type="text" id="player-name" placeholder="Enter your name…" maxlength="20" />
+        <button class="btn btn-primary" onclick="joinQueue()">Join Queue</button>
+      </div>
+      <div id="queue-status" style="font-family:'Space Mono',monospace;font-size:0.78rem;color:var(--muted)">
+        Enter a name and join the queue to find an opponent.
+      </div>
+    </div>
+
+    <!-- Queue -->
+    <div class="card">
+      <h2>Queue <span id="queue-count" style="color:var(--accent)">0</span></h2>
+      <div class="queue-list" id="queue-list">
+        <div class="empty-state">No players in queue…</div>
+      </div>
+      <button class="btn btn-ghost" onclick="refreshLobby()" style="width:100%;font-size:0.8rem">↻ Refresh</button>
+    </div>
+
+    <!-- Rules -->
+    <div class="card">
+      <h2>How to Play</h2>
+      <div class="rules-list">
+        <div class="rule-item"><span class="rule-num">01</span><span>Pieces move diagonally on dark squares.</span></div>
+        <div class="rule-item"><span class="rule-num">02</span><span>Jump over opponent pieces to capture them.</span></div>
+        <div class="rule-item"><span class="rule-num">03</span><span>Multiple captures in one turn are allowed.</span></div>
+        <div class="rule-item"><span class="rule-num">04</span><span>Reach the back row to become a King (can move backward).</span></div>
+        <div class="rule-item"><span class="rule-num">05</span><span>Capture all enemy pieces to win.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div id="screen-waiting" class="screen">
+  <div style="font-size:1.4rem;font-weight:800">Finding opponent…</div>
+  <div class="spinner"></div>
+  <div class="waiting-text" id="waiting-msg">Searching for a match</div>
+  <div class="match-found-banner" id="match-banner">⚡ Match found! Loading game…</div>
+  <br><br>
+  <button class="btn btn-ghost" onclick="leaveQueue()">Leave Queue</button>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+    <div>
+      <div style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Match in progress</div>
+      <div style="font-size:1.1rem;font-weight:800;margin-top:0.2rem" id="game-title">Game</div>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.8rem;color:var(--muted)" id="game-timer">0:00</div>
+  </div>
+
+  <div class="game-layout">
+    <!-- P1 Panel -->
+    <div class="player-panel" id="panel-p1">
+      <div class="panel-name">
+        <div class="piece-icon p1"></div>
+        <span id="p1-name">Player 1</span>
+      </div>
+      <div class="panel-label">Pieces remaining</div>
+      <div class="panel-score" id="p1-score">12</div>
+      <div class="stats-row">
+        <div class="stat"><span>Captures</span><span id="p1-captures">0</span></div>
+        <div class="stat"><span>Kings</span><span id="p1-kings">0</span></div>
+      </div>
+      <div class="turn-indicator waiting" id="p1-turn">Waiting…</div>
+    </div>
+
+    <!-- Board -->
+    <div class="board-wrapper">
+      <div class="board-container">
+        <div id="board"></div>
+      </div>
+      <div class="game-log" id="game-log"></div>
+      <div class="game-controls">
+        <button class="btn btn-ghost" style="font-size:0.8rem" onclick="offerDraw()">Offer Draw</button>
+        <button class="btn btn-danger" style="font-size:0.8rem" onclick="resignGame()">Resign</button>
+      </div>
+    </div>
+
+    <!-- P2 Panel -->
+    <div class="player-panel" id="panel-p2">
+      <div class="panel-name">
+        <div class="piece-icon p2"></div>
+        <span id="p2-name">Player 2</span>
+      </div>
+      <div class="panel-label">Pieces remaining</div>
+      <div class="panel-score" id="p2-score">12</div>
+      <div class="stats-row">
+        <div class="stat"><span>Captures</span><span id="p2-captures">0</span></div>
+        <div class="stat"><span>Kings</span><span id="p2-kings">0</span></div>
+      </div>
+      <div class="turn-indicator waiting" id="p2-turn">Waiting…</div>
+    </div>
+  </div>
+</div>
+
+<!-- WIN MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="trophy" id="modal-trophy">🏆</div>
+    <h2 id="modal-title">Victory!</h2>
+    <p id="modal-msg">Game over</p>
+    <div style="display:flex;gap:0.75rem;justify-content:center">
+      <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+      <button class="btn btn-ghost" onclick="goLobby()">Lobby</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  TILEARENA — Multiplayer Checkers Template
+//  Architecture: Shared localStorage as "server"
+//  (Replace with WebSocket server for production)
+// ══════════════════════════════════════════════
+
+const STORAGE_KEY = 'tilearena_v1';
+const POLL_INTERVAL = 800;
+
+// ── Game State ──
+let myId = 'p_' + Math.random().toString(36).slice(2, 9);
+let myName = '';
+let myRole = null;      // 'p1' | 'p2'
+let gameId = null;
+let gameState = null;   // full board state
+let selectedCell = null;
+let validMoves = [];
+let pollTimer = null;
+let timerInterval = null;
+let gameSeconds = 0;
+
+// ── Shared State (simulated server via localStorage) ──
+function getShared() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { queue: [], games: {} };
+  } catch { return { queue: [], games: {} }; }
+}
+function setShared(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ── Screen Management ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Header Stats ──
+function updateHeader() {
+  const data = getShared();
+  const online = data.queue.length + Object.values(data.games).flatMap(g => [g.p1id, g.p2id]).length;
+  const active = Object.values(data.games).filter(g => g.status === 'playing').length;
+  document.getElementById('hdr-players').textContent = `${online} players online`;
+  document.getElementById('hdr-games').textContent = `${active} games active`;
+}
+
+// ── Queue Management ──
+function joinQueue() {
+  myName = document.getElementById('player-name').value.trim();
+  if (!myName) { alert('Please enter your name first.'); return; }
+
+  const data = getShared();
+
+  // Clean stale entries (>30s old)
+  data.queue = data.queue.filter(e => Date.now() - e.ts < 30000);
+
+  // Already in queue?
+  if (data.queue.find(e => e.id === myId)) return;
+
+  data.queue.push({ id: myId, name: myName, ts: Date.now() });
+  setShared(data);
+
+  showScreen('screen-waiting');
+  startPolling();
+}
+
+function leaveQueue() {
+  const data = getShared();
+  data.queue = data.queue.filter(e => e.id !== myId);
+  setShared(data);
+  stopPolling();
+  showScreen('screen-lobby');
+  refreshLobby();
+}
+
+function refreshLobby() {
+  const data = getShared();
+  const queue = data.queue.filter(e => Date.now() - e.ts < 30000);
+  const list = document.getElementById('queue-list');
+  document.getElementById('queue-count').textContent = queue.length;
+
+  if (queue.length === 0) {
+    list.innerHTML = '<div class="empty-state">No players in queue…</div>';
+    return;
+  }
+
+  list.innerHTML = queue.map(e => `
+    <div class="queue-entry ${e.id === myId ? 'me' : ''}">
+      <span>${e.name}</span>
+      <span class="badge ${e.id === myId ? 'badge-you' : 'badge-waiting'}">
+        ${e.id === myId ? 'You' : 'Waiting'}
+      </span>
+    </div>
+  `).join('');
+  updateHeader();
+}
+
+// ── Polling (replaces WebSocket) ──
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(poll, POLL_INTERVAL);
+  poll();
+}
+
+function stopPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+}
+
+function poll() {
+  const data = getShared();
+
+  // Clean stale queue entries
+  data.queue = data.queue.filter(e => Date.now() - e.ts < 30000);
+
+  // Update my heartbeat if in queue
+  const me = data.queue.find(e => e.id === myId);
+  if (me) me.ts = Date.now();
+
+  // Check if already matched into a game
+  const myGame = Object.entries(data.games).find(([,g]) =>
+    (g.p1id === myId || g.p2id === myId) && g.status !== 'ended'
+  );
+
+  if (myGame) {
+    const [gid, g] = myGame;
+    setShared(data);
+    if (!gameId) {
+      enterGame(gid, g);
+    } else {
+      syncGame(g);
+    }
+    return;
+  }
+
+  // Try to match if I'm in queue and there's another player
+  if (data.queue.length >= 2 && data.queue[0].id === myId) {
+    // I'm first — I create the match
+    const opponent = data.queue[1];
+    const newGameId = 'game_' + Date.now();
+    const newGame = createInitialGame(myId, myName, opponent.id, opponent.name);
+    data.games[newGameId] = newGame;
+    data.queue = data.queue.filter(e => e.id !== myId && e.id !== opponent.id);
+    setShared(data);
+    enterGame(newGameId, newGame);
+    return;
+  }
+
+  setShared(data);
+  updateWaitingUI(data);
+  updateHeader();
+}
+
+function updateWaitingUI(data) {
+  const count = data.queue.length;
+  document.getElementById('waiting-msg').textContent =
+    count >= 2 ? `${count} players in queue — matching…` :
+    count === 1 ? 'Waiting for an opponent to join…' : 'Connecting…';
+}
+
+// ── Game Creation ──
+function createInitialGame(p1id, p1name, p2id, p2name) {
+  const board = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const isDark = (r + c) % 2 === 1;
+      let piece = null;
+      if (isDark) {
+        if (r < 3) piece = { player: 'p2', king: false };
+        if (r > 4) piece = { player: 'p1', king: false };
+      }
+      board.push(piece);
+    }
+  }
+  return {
+    p1id, p1name, p2id, p2name,
+    board,
+    turn: 'p1',
+    status: 'playing',
+    captures: { p1: 0, p2: 0 },
+    ts: Date.now()
+  };
+}
+
+function enterGame(gid, g) {
+  gameId = gid;
+  gameState = g;
+
+  myRole = g.p1id === myId ? 'p1' : 'p2';
+
+  document.getElementById('match-banner').style.display = 'block';
+  document.getElementById('p1-name').textContent = g.p1name;
+  document.getElementById('p2-name').textContent = g.p2name;
+  document.getElementById('game-title').textContent = `${g.p1name} vs ${g.p2name}`;
+
+  setTimeout(() => {
+    stopPolling();
+    showScreen('screen-game');
+    startGameTimer();
+    startGamePolling();
+    renderBoard();
+    logMsg(`Game started! ${g.p1name} (Red) vs ${g.p2name} (Blue)`, 'important');
+    logMsg(`${g.p1name} goes first.`);
+    updatePanels();
+  }, 800);
+}
+
+// ── Game Polling ──
+let gamePollTimer = null;
+function startGamePolling() {
+  if (gamePollTimer) clearInterval(gamePollTimer);
+  gamePollTimer = setInterval(gamePoll, POLL_INTERVAL);
+}
+
+function gamePoll() {
+  const data = getShared();
+  const g = data.games[gameId];
+  if (!g) return;
+
+  // Detect opponent move
+  if (g.ts !== gameState.ts) {
+    gameState = g;
+    renderBoard();
+    updatePanels();
+    if (g.status === 'ended') {
+      endGame(g.winner, g.reason);
+    }
+  }
+}
+
+function syncGame(g) {
+  if (g.ts !== gameState?.ts) {
+    gameState = g;
+    renderBoard();
+    updatePanels();
+  }
+}
+
+// ── Timer ──
+function startGameTimer() {
+  gameSeconds = 0;
+  timerInterval = setInterval(() => {
+    gameSeconds++;
+    const m = Math.floor(gameSeconds / 60);
+    const s = gameSeconds % 60;
+    document.getElementById('game-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+// ── Board Rendering ──
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  for (let idx = 0; idx < 64; idx++) {
+    const row = Math.floor(idx / 8);
+    const col = idx % 8;
+    const isDark = (row + col) % 2 === 1;
+    const piece = gameState.board[idx];
+
+    const cell = document.createElement('div');
+    cell.className = `cell ${isDark ? 'dark' : 'light'}`;
+    cell.dataset.idx = idx;
+
+    if (selectedCell === idx) cell.classList.add('selected');
+    if (validMoves.some(m => m.to === idx)) cell.classList.add('highlight');
+
+    if (piece) {
+      const p = document.createElement('div');
+      p.className = `piece ${piece.player}${piece.king ? ' king' : ''}`;
+      if (selectedCell === idx) p.classList.add('selected-piece');
+
+      // Only allow clicking own pieces on own turn
+      if (piece.player === myRole && gameState.turn === myRole) {
+        p.addEventListener('click', () => selectPiece(idx));
+      }
+      cell.appendChild(p);
+    }
+
+    if (validMoves.some(m => m.to === idx)) {
+      cell.addEventListener('click', () => movePiece(idx));
+    }
+
+    board.appendChild(cell);
+  }
+}
+
+// ── Piece Selection ──
+function selectPiece(idx) {
+  if (gameState.turn !== myRole) return;
+
+  selectedCell = idx;
+  validMoves = getValidMoves(idx, gameState.board);
+
+  // Force jumps if available
+  const allJumps = getAllJumps(myRole, gameState.board);
+  if (allJumps.length > 0 && !validMoves.some(m => m.captures?.length > 0)) {
+    validMoves = [];
+    logMsg('You must capture if possible!');
+  }
+
+  renderBoard();
+}
+
+// ── Move Execution ──
+function movePiece(toIdx) {
+  const move = validMoves.find(m => m.to === toIdx);
+  if (!move) return;
+
+  const data = getShared();
+  const g = data.games[gameId];
+  if (!g || g.turn !== myRole) return;
+
+  const board = [...g.board];
+
+  // Move piece
+  board[toIdx] = { ...board[move.from] };
+  board[move.from] = null;
+
+  // Remove captured pieces
+  if (move.captures) {
+    move.captures.forEach(ci => { board[ci] = null; });
+    g.captures[myRole] += move.captures.length;
+    logMsg(`${g[myRole + 'name']} captured ${move.captures.length} piece${move.captures.length>1?'s':''}!`, 'capture');
+  }
+
+  // King promotion
+  const toRow = Math.floor(toIdx / 8);
+  if (myRole === 'p1' && toRow === 0) { board[toIdx].king = true; logMsg(`${g[myRole+'name']} got a King! ♛`, 'important'); }
+  if (myRole === 'p2' && toRow === 7) { board[toIdx].king = true; logMsg(`${g[myRole+'name']} got a King! ♛`, 'important'); }
+
+  // Check for additional captures (multi-jump)
+  const extraJumps = move.captures?.length > 0 ? getValidMoves(toIdx, board).filter(m => m.captures?.length > 0) : [];
+  const multiJumpPossible = extraJumps.length > 0 && !board[toIdx].king; // simplification
+
+  g.board = board;
+  g.turn = myRole === 'p1' ? 'p2' : 'p1';
+  g.ts = Date.now();
+
+  // Check win condition
+  const p1pieces = board.filter(p => p?.player === 'p1').length;
+  const p2pieces = board.filter(p => p?.player === 'p2').length;
+
+  if (p1pieces === 0) { g.status = 'ended'; g.winner = 'p2'; g.reason = 'All red pieces captured'; }
+  if (p2pieces === 0) { g.status = 'ended'; g.winner = 'p1'; g.reason = 'All blue pieces captured'; }
+
+  data.games[gameId] = g;
+  setShared(data);
+
+  gameState = g;
+  selectedCell = null;
+  validMoves = [];
+  renderBoard();
+  updatePanels();
+
+  if (g.status === 'ended') {
+    endGame(g.winner, g.reason);
+  } else {
+    const nextPlayer = g.turn === 'p1' ? g.p1name : g.p2name;
+    logMsg(`${nextPlayer}'s turn.`);
+  }
+}
+
+// ── Move Calculation ──
+function getValidMoves(idx, board) {
+  const piece = board[idx];
+  if (!piece) return [];
+
+  const moves = [];
+  const row = Math.floor(idx / 8);
+  const col = idx % 8;
+  const dirs = [];
+
+  if (piece.player === 'p1' || piece.king) dirs.push(-1); // up
+  if (piece.player === 'p2' || piece.king) dirs.push(1);  // down
+
+  for (const dr of dirs) {
+    for (const dc of [-1, 1]) {
+      const nr = row + dr, nc = col + dc;
+      const nidx = nr * 8 + nc;
+      if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
+
+      if (!board[nidx]) {
+        // Simple move
+        moves.push({ from: idx, to: nidx, captures: [] });
+      } else if (board[nidx].player !== piece.player) {
+        // Jump
+        const jr = row + dr * 2, jc = col + dc * 2;
+        const jidx = jr * 8 + jc;
+        if (jr >= 0 && jr <= 7 && jc >= 0 && jc <= 7 && !board[jidx]) {
+          moves.push({ from: idx, to: jidx, captures: [nidx] });
+        }
+      }
+    }
+  }
+
+  return moves;
+}
+
+function getAllJumps(player, board) {
+  const jumps = [];
+  board.forEach((p, idx) => {
+    if (p?.player === player) {
+      const moves = getValidMoves(idx, board);
+      jumps.push(...moves.filter(m => m.captures?.length > 0));
+    }
+  });
+  return jumps;
+}
+
+// ── UI Updates ──
+function updatePanels() {
+  if (!gameState) return;
+  const { board, turn, captures } = gameState;
+
+  const p1pieces = board.filter(p => p?.player === 'p1').length;
+  const p2pieces = board.filter(p => p?.player === 'p2').length;
+  const p1kings = board.filter(p => p?.player === 'p1' && p.king).length;
+  const p2kings = board.filter(p => p?.player === 'p2' && p.king).length;
+
+  document.getElementById('p1-score').textContent = p1pieces;
+  document.getElementById('p2-score').textContent = p2pieces;
+  document.getElementById('p1-captures').textContent = captures.p1;
+  document.getElementById('p2-captures').textContent = captures.p2;
+  document.getElementById('p1-kings').textContent = p1kings;
+  document.getElementById('p2-kings').textContent = p2kings;
+
+  const p1turn = document.getElementById('p1-turn');
+  const p2turn = document.getElementById('p2-turn');
+  const p1panel = document.getElementById('panel-p1');
+  const p2panel = document.getElementById('panel-p2');
+
+  if (turn === 'p1') {
+    p1turn.className = 'turn-indicator your-turn';
+    p1turn.textContent = myRole === 'p1' ? '⚡ Your turn' : 'Their turn';
+    p2turn.className = 'turn-indicator waiting';
+    p2turn.textContent = 'Waiting…';
+    p1panel.classList.add('active-panel');
+    p2panel.classList.remove('active-panel');
+  } else {
+    p2turn.className = 'turn-indicator your-turn';
+    p2turn.textContent = myRole === 'p2' ? '⚡ Your turn' : 'Their turn';
+    p1turn.className = 'turn-indicator waiting';
+    p1turn.textContent = 'Waiting…';
+    p2panel.classList.add('active-panel');
+    p1panel.classList.remove('active-panel');
+  }
+}
+
+// ── Log ──
+function logMsg(text, type = '') {
+  const log = document.getElementById('game-log');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  const t = new Date();
+  const time = `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+  entry.textContent = `[${time}] ${text}`;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── Game End ──
+function endGame(winner, reason) {
+  if (timerInterval) clearInterval(timerInterval);
+  if (gamePollTimer) clearInterval(gamePollTimer);
+
+  const isWinner = winner === myRole;
+  document.getElementById('modal-trophy').textContent = isWinner ? '🏆' : '💀';
+  document.getElementById('modal-title').textContent = isWinner ? 'Victory!' : 'Defeated';
+  document.getElementById('modal-msg').textContent = reason || 'Game over';
+  document.getElementById('modal').classList.add('open');
+}
+
+// ── Actions ──
+function offerDraw() {
+  logMsg('Draw offered. (Feature: implement acceptance logic)', 'important');
+}
+
+function resignGame() {
+  if (!confirm('Resign this match?')) return;
+  const data = getShared();
+  const g = data.games[gameId];
+  if (g) {
+    g.status = 'ended';
+    g.winner = myRole === 'p1' ? 'p2' : 'p1';
+    g.reason = `${myName} resigned`;
+    g.ts = Date.now();
+    data.games[gameId] = g;
+    setShared(data);
+  }
+  endGame(myRole === 'p1' ? 'p2' : 'p1', 'You resigned');
+}
+
+function playAgain() {
+  document.getElementById('modal').classList.remove('open');
+  cleanup();
+  showScreen('screen-lobby');
+  joinQueue();
+}
+
+function goLobby() {
+  document.getElementById('modal').classList.remove('open');
+  cleanup();
+  showScreen('screen-lobby');
+  refreshLobby();
+}
+
+function cleanup() {
+  if (gamePollTimer) clearInterval(gamePollTimer);
+  if (timerInterval) clearInterval(timerInterval);
+  if (pollTimer) clearInterval(pollTimer);
+  gameId = null;
+  gameState = null;
+  myRole = null;
+  selectedCell = null;
+  validMoves = [];
+}
+
+// ── Init ──
+window.addEventListener('storage', () => {
+  if (document.getElementById('screen-lobby').classList.contains('active')) refreshLobby();
+});
+
+// Clean up stale games on load
+(function init() {
+  const data = getShared();
+  const now = Date.now();
+  Object.keys(data.games).forEach(gid => {
+    if (now - data.games[gid].ts > 3600000) delete data.games[gid]; // 1hr timeout
+  });
+  data.queue = data.queue.filter(e => now - e.ts < 30000);
+  setShared(data);
+  refreshLobby();
+  setInterval(updateHeader, 3000);
+})();
+</script>
+</body>
+</html>
